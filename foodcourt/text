@@ -1,0 +1,123 @@
+servicess
+==========================================
+
+import { Injectable } from '@angular/core';
+import {HttpClient, HttpHeaders, HttpParams} from "@angular/common/http";
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ProductService {
+private baseUrl = 'http://localhost:8001/products/';
+
+  constructor(private http: HttpClient) {}
+
+  getProducts(searchTerm: string, pageIndex: number, pageSize: number) {
+    let params = new HttpParams()
+      .set('limit', pageSize.toString())
+      .set('offset', (pageIndex - 1) * pageSize)
+      .set('search', searchTerm);
+    return this.http.get(this.baseUrl + 'products/', { params: params });
+  }
+
+  }
+========================================================
+ product.component.ts
+ ====================================================
+
+ import {Component, OnInit} from '@angular/core';
+import {ProductService} from "../apiservices/product.service";
+import {Product} from "../Product";
+
+@Component({
+  selector: 'app-products',
+  templateUrl: './products.component.html',
+  styleUrls: ['./products.component.css']
+})
+export class ProductsComponent implements OnInit {
+searchTerm = '';
+  pageIndex = 1;
+  pageSize = 1;
+  totalCount = 0;
+  totalPages = 0;
+  products: any = [];
+
+  constructor(private productService: ProductService) {}
+
+  ngOnInit(): void {
+    this.handleSearch();
+  }
+
+  handleSearch() {
+    this.productService.getProducts(
+      this.searchTerm,
+      this.pageIndex,
+      this.pageSize
+    ).subscribe((response: any) => {
+      this.products = response.results;
+      this.totalCount = response.count;
+      this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+    });
+  }
+
+  nextPage() {
+    this.pageIndex++;
+    this.handleSearch();
+  }
+
+  previousPage() {
+    this.pageIndex--;
+    this.handleSearch();
+  }
+
+  handlePageSizeChange(event: any) {
+    this.pageSize = event.target.value;
+    this.handleSearch();
+  }
+
+
+}
+
+==================================================================
+html
+=============================================================
+
+<div>
+  <h2>Products</h2>
+  <label>Search:</label>
+  <input type="text" [(ngModel)]="searchTerm" (keyup)="handleSearch()"/>
+<!--  <input type="text" [(ngModel)]="searchTerm" (keyup.enter)="handleSearch()"/>-->
+  <button (click)="handleSearch()">Search</button>
+  <br>
+  <label>Page Size:</label>
+  <select [(ngModel)]="pageSize" (change)="handlePageSizeChange($event)">
+    <option value="1">1</option>
+    <option value="5">5</option>
+    <option value="10">10</option>
+    <option value="20">20</option>
+    <option value="50">50</option>
+  </select>
+  <br>
+  <ul>
+    <li *ngFor="let product of products">
+      <div>
+        <img [src]="product.image" [alt]="product.name" height="100" width="100">
+        <div>{{ product.name }}</div>
+        <div>Price: {{ product.price }}</div>
+        <div>Rating: {{ product.rating }}</div>
+      </div>
+    </li>
+  </ul>
+  <div>
+    <!-- display the page number and total pages -->
+    <span>Page {{ pageIndex }} of {{ totalPages }}</span>
+
+    <!-- display the previous and next buttons -->
+    <button (click)="previousPage()" [disabled]="pageIndex === 1">Previous Page</button>
+    <button (click)="nextPage()" [disabled]="pageIndex === totalPages">Next Page</button>
+  </div>
+</div>
+
+==========================working above============================================================
+
+
